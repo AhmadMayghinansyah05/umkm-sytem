@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Kelola UMKM - Admin Sistem{% endblock %}
+{% block content %}
+<div class="flex min-h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <div class="fixed left-0 top-0 h-full w-64 bg-white border-r p-6">
+        <div class="flex items-center gap-3 mb-8">
+            <div class="p-2 bg-gradient-to-br from-rose-500 to-orange-500 rounded-lg">
+                <i class="fas fa-cog text-white"></i>
+            </div>
+            <div>
+                <h2 class="font-bold text-gray-800">Admin Panel</h2>
+                <p class="text-xs text-gray-500">Sistem UMKM</p>
+            </div>
+        </div>
+        
+        <nav class="space-y-1">
+            <a href="/admin/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50">
+                <i class="fas fa-home"></i><span>Dashboard</span>
+            </a>
+            <a href="/admin/umkm" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-rose-50 text-rose-600 font-semibold">
+                <i class="fas fa-store"></i><span>Kelola UMKM</span>
+            </a>
+            <a href="/admin/products" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50">
+                <i class="fas fa-box"></i><span>Kelola Produk</span>
+            </a>
+            <a href="/admin/aktivitas-log" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50">
+                <i class="fas fa-history"></i><span>Log Aktivitas</span>
+            </a>
+        </nav>
+        
+        <div class="absolute bottom-6 left-6 right-6">
+            <div class="bg-gradient-to-br from-rose-50 to-orange-50 rounded-lg p-4 mb-3">
+                <p class="text-xs text-gray-500">Admin</p>
+                <p class="text-sm font-semibold">{{user_name}}</p>
+            </div>
+            <a href="/logout" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600">
+                <i class="fas fa-sign-out-alt"></i><span>Keluar</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="ml-64 flex-1 p-8">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Kelola Data UMKM</h1>
+            <p class="text-gray-600">Manajemen data pelaku UMKM yang terdaftar dalam sistem</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-gray-500 text-sm">Total UMKM</p>
+                    <i class="fas fa-store text-blue-600"></i>
+                </div>
+                <p class="text-2xl font-bold text-gray-800">{{umkm_list|length}}</p>
+                <p class="text-xs text-emerald-600 mt-1">+12 bulan ini</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-gray-500 text-sm">UMKM Aktif</p>
+                    <i class="fas fa-check-circle text-emerald-600"></i>
+                </div>
+                <p class="text-2xl font-bold text-gray-800">4</p>
+                <p class="text-xs text-gray-500 mt-1">80% dari total</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-gray-500 text-sm">Pending Review</p>
+                    <i class="fas fa-clock text-amber-600"></i>
+                </div>
+                <p class="text-2xl font-bold text-gray-800">1</p>
+                <p class="text-xs text-gray-500 mt-1">Perlu verifikasi</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-gray-500 text-sm">Total Penjualan</p>
+                    <i class="fas fa-chart-line text-purple-600"></i>
+                </div>
+                <p class="text-2xl font-bold text-gray-800">Rp 140jt</p>
+                <p class="text-xs text-emerald-600 mt-1">+15%</p>
+            </div>
+        </div>
+
+        <!-- UMKM Table -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="p-6 border-b">
+                <h2 class="text-lg font-bold text-gray-800">Daftar UMKM Terdaftar</h2>
+                <p class="text-sm text-gray-500">Total {{umkm_list|length}} UMKM</p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nama UMKM</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kategori</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Penjualan</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Terdaftar</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for umkm in umkm_list %}
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-rose-100 to-orange-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-store text-rose-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-800">{{umkm.name}}</p>
+                                        <p class="text-xs text-gray-500">ID: UMKM-{{loop.index}}23</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                                    {{umkm.category}}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="font-semibold text-gray-800">{{umkm.sales}}</p>
+                                <p class="text-xs text-gray-500">Bulan ini</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="text-sm text-gray-600">{{umkm.date}}</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if umkm.status == 'active' %}
+                                <span class="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full">
+                                    <i class="fas fa-check-circle"></i> Aktif
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1 px-3 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-full">
+                                    <i class="fas fa-clock"></i> Pending
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <button class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add UMKM Button (Floating) -->
+        <button class="fixed bottom-8 right-8 w-14 h-14 bg-rose-600 text-white rounded-full shadow-lg hover:bg-rose-700 transition flex items-center justify-center">
+            <i class="fas fa-plus text-xl"></i>
+        </button>
+    </div>
+</div>
+{% endblock %}

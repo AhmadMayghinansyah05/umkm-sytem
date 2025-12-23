@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Sistem UMKM{% endblock %}
+{% block content %}
+<div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <div class="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 p-6">
+        <div class="flex items-center gap-3 mb-8">
+            <div class="p-2 bg-blue-600 rounded-lg"><i class="fas fa-shopping-bag text-white"></i></div>
+            <div><h2 class="font-bold text-gray-800">Sistem UMKM</h2><p class="text-xs text-gray-500">Dashboard</p></div>
+        </div>
+        <nav class="space-y-1">
+            <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-600 font-semibold"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="/input-penjualan" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fas fa-dollar-sign"></i><span>Input Penjualan</span></a>
+            <a href="/prediksi" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fas fa-chart-line"></i><span>Prediksi</span></a>
+            <a href="/rekomendasi" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fas fa-box"></i><span>Rekomendasi</span></a>
+            <a href="/aktivitas-log" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50"><i class="fas fa-history"></i><span>Log Aktivitas</span></a>
+        </nav>
+        <div class="absolute bottom-6 left-6 right-6">
+            <div class="bg-gray-50 rounded-lg p-4 mb-3"><p class="text-xs text-gray-500">Akun</p><p class="text-sm font-semibold">{{user_name}}</p></div>
+            <a href="/logout" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600"><i class="fas fa-sign-out-alt"></i><span>Keluar</span></a>
+        </div>
+    </div>
+
+    <!-- Main -->
+    <div class="ml-64 flex-1 p-8">
+        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-8 text-white mb-6">
+            <h1 class="text-3xl font-bold mb-2">Selamat Datang! 👋</h1>
+            <p class="text-blue-100">Ringkasan bisnis Anda hari ini</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="flex justify-between mb-4">
+                    <div class="p-3 bg-emerald-50 rounded-lg"><i class="fas fa-dollar-sign text-emerald-600 text-xl"></i></div>
+                    <span class="text-emerald-600 text-sm font-semibold">+12.5%</span>
+                </div>
+                <p class="text-gray-500 text-sm">Penjualan Hari Ini</p>
+                <p class="text-2xl font-bold text-gray-800">Rp 2.4 jt</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="flex justify-between mb-4">
+                    <div class="p-3 bg-blue-50 rounded-lg"><i class="fas fa-chart-line text-blue-600 text-xl"></i></div>
+                    <span class="text-blue-600 text-sm font-semibold">+8.2%</span>
+                </div>
+                <p class="text-gray-500 text-sm">Penjualan Bulan Ini</p>
+                <p class="text-2xl font-bold text-gray-800">Rp 58.3 jt</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="flex justify-between mb-4">
+                    <div class="p-3 bg-purple-50 rounded-lg"><i class="fas fa-brain text-purple-600 text-xl"></i></div>
+                    <span class="text-purple-600 text-sm font-semibold">AI</span>
+                </div>
+                <p class="text-gray-500 text-sm">Prediksi Bulan Depan</p>
+                <p class="text-2xl font-bold text-gray-800">Rp 63.5 jt</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="flex justify-between mb-4">
+                    <div class="p-3 bg-amber-50 rounded-lg"><i class="fas fa-box text-amber-600 text-xl"></i></div>
+                    <span class="text-amber-600 text-sm font-semibold">Active</span>
+                </div>
+                <p class="text-gray-500 text-sm">Total Produk</p>
+                <p class="text-2xl font-bold text-gray-800">24 Item</p>
+            </div>
+        </div>
+
+        <!-- Products -->
+        <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+            <h2 class="text-lg font-bold mb-4">Produk Terlaris</h2>
+            <div class="grid grid-cols-5 gap-4">
+                {% for product in top_products %}
+                <div class="border rounded-xl p-4 hover:shadow-md transition">
+                    <div class="flex justify-between mb-3">
+                        <div class="p-2 bg-blue-50 rounded-lg"><i class="fas fa-box text-blue-600"></i></div>
+                        <span class="text-xs font-semibold px-2 py-1 rounded-full {% if product.growth > 0 %}bg-emerald-50 text-emerald-600{% else %}bg-red-50 text-red-600{% endif %}">
+                            {{product.growth}}%
+                        </span>
+                    </div>
+                    <h3 class="font-semibold text-sm mb-2">{{product.name}}</h3>
+                    <p class="font-bold text-gray-800">Rp {{(product.sales/1000)|int}}k</p>
+                    <p class="text-xs text-gray-500">Stok: {{product.stock}}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Activities -->
+        <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h2 class="text-lg font-bold mb-4">Aktivitas Terkini</h2>
+            <div class="space-y-3">
+                {% for activity in activities %}
+                <div class="flex gap-3 pb-3 border-b last:border-0">
+                    <div class="p-2 rounded-lg h-fit {% if activity.status == 'success' %}bg-emerald-50{% elif activity.status == 'warning' %}bg-amber-50{% else %}bg-blue-50{% endif %}">
+                        <i class="fas {% if activity.status == 'success' %}fa-check-circle text-emerald-600{% elif activity.status == 'warning' %}fa-exclamation-circle text-amber-600{% else %}fa-info-circle text-blue-600{% endif %}"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium">{{activity.desc}}</p>
+                        <p class="text-xs text-gray-400">{{activity.time}}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
