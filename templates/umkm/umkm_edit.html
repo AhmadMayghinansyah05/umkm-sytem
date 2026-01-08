@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit UMKM</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 520px;
+            margin: 60px auto;
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 24px;
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 6px;
+            color: #34495e;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .btn-secondary:hover {
+            background: #dcdde1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>✏️ Edit Data UMKM</h2>
+
+    <form method="post">
+        <div class="form-group">
+            <label>Nama UMKM</label>
+            <input type="text" name="nama_umkm"
+                   value="{{ umkm.nama_umkm }}" required>
+        </div>
+
+        <div class="form-group">
+            <label>Alamat</label>
+            <textarea name="alamat" required>{{ umkm.alamat }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Kategori</label>
+            <input type="text" name="kategori"
+                   value="{{ umkm.kategori }}" required>
+        </div>
+
+        <div class="actions">
+            <a href="/umkm/dashboard" class="btn btn-secondary">
+                ← Kembali
+            </a>
+            <button type="submit" class="btn btn-primary">
+                 Simpan Perubahan
+            </button>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

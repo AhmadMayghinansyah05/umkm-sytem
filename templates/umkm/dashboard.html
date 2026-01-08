@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard UMKM</title>
+    <style>
+        :root {
+            --primary: #0d6efd;
+            --success: #198754;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --bg: #f4f6f8;
+            --card: #ffffff;
+            --text: #333;
+            --muted: #6c757d;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Segoe UI", system-ui, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            color: var(--text);
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: linear-gradient(90deg, #0d6efd, #0b5ed7);
+            color: white;
+            padding: 16px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .navbar h1 {
+            font-size: 18px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .navbar a:hover { opacity: 1; }
+
+        /* CONTAINER */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 22px;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        /* BUTTON */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            color: #fff;
+            background: var(--primary);
+        }
+
+        .btn:hover { opacity: 0.9; }
+
+        .btn-success { background: var(--success); }
+        .btn-warning { background: var(--warning); color: #000; }
+        .btn-danger { background: var(--danger); }
+
+        /* GRID */
+        .umkm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 22px;
+        }
+
+        .umkm-card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            transition: transform .2s, box-shadow .2s;
+            position: relative;
+        }
+
+        .umkm-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 26px rgba(0,0,0,0.08);
+        }
+
+        .active-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--success);
+            color: #fff;
+            font-size: 11px;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+
+        .umkm-card h4 {
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+
+        .umkm-card p {
+            margin: 4px 0;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .card-actions {
+            margin-top: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        /* EMPTY */
+        .empty-state {
+            background: white;
+            padding: 50px 30px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        }
+
+        /* ACTIVE UMKM */
+        .active-umkm {
+            margin-top: 40px;
+            background: linear-gradient(90deg, #e7f1ff, #f8fbff);
+            border-left: 6px solid var(--primary);
+            padding: 26px;
+            border-radius: 16px;
+        }
+
+        .active-umkm h3 {
+            margin-top: 0;
+        }
+
+        .active-actions {
+            margin-top: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>UMKM Smart System</h1>
+    <a href="/logout">Logout</a>
+</div>
+
+<div class="container">
+
+    <div class="header">
+        <h2>Dashboard Pelaku UMKM</h2>
+        <a href="/umkm/tambah" class="btn btn-success">➕ Tambah UMKM</a>
+    </div>
+
+    <div class="subtitle">
+        Kelola UMKM, produk, penjualan, dan prediksi bisnis Anda secara terintegrasi.
+    </div>
+
+    {% if umkm_list|length == 0 %}
+        <div class="empty-state">
+            <h3>Belum Ada UMKM</h3>
+            <p>Tambahkan UMKM pertama Anda untuk mulai menggunakan sistem.</p>
+            <br>
+            <a href="/umkm/tambah" class="btn btn-success">Tambah UMKM</a>
+        </div>
+    {% else %}
+        <div class="umkm-grid">
+            {% for u in umkm_list %}
+            <div class="umkm-card">
+
+                {% if active_umkm and u.id == active_umkm.id %}
+                    <span class="active-badge">UMKM Aktif</span>
+                {% endif %}
+
+                <h4>{{ u.nama_umkm }}</h4>
+                <p><strong>Kategori:</strong> {{ u.kategori }}</p>
+                <p><strong>Alamat:</strong> {{ u.alamat }}</p>
+
+                <div class="card-actions">
+                    {% if not active_umkm or u.id != active_umkm.id %}
+                        <a href="/umkm/select/{{ u.id }}" class="btn">Aktifkan</a>
+                    {% endif %}
+                    <a href="/umkm/edit/{{ u.id }}" class="btn btn-warning">✏️ Edit</a>
+                    <form action="/umkm/delete/{{ u.id }}" method="post"
+                          onsubmit="return confirm('Yakin ingin menghapus UMKM ini?')">
+                        <button type="submit" class="btn btn-danger">🗑 Hapus</button>
+                    </form>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if active_umkm %}
+    <div class="active-umkm">
+        <h3>UMKM Aktif</h3>
+        <strong>{{ active_umkm.nama_umkm }}</strong>
+        <p>{{ active_umkm.alamat }} • {{ active_umkm.kategori }}</p>
+
+        <div class="active-actions">
+            <a href="/produk/data" class="btn">📦 Produk</a>
+            <a href="/penjualan/data" class="btn">💰 Penjualan</a>
+            <a href="/prediksi/penjualan" class="btn">📈 Prediksi</a>
+            <a href="/rekomendasi/produk" class="btn">⭐ Rekomendasi</a>
+            <a href="/umkm/log-aktivitas" class="btn">🧾 Log Aktivitas</a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

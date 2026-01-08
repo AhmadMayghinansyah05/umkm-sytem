@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data UMKM</title>
+</head>
+<body>
+<h2>Data UMKM Saya</h2>
+
+<form method="post">
+    <label>Nama UMKM</label><br>
+    <input type="text" name="nama_umkm" required><br><br>
+
+    <label>Alamat</label><br>
+    <input type="text" name="alamat" required><br><br>
+
+    <label>Kategori</label><br>
+    <input type="text" name="kategori" required><br><br>
+
+    <button type="submit">Simpan</button>
+</form>
+
+<hr>
+
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Nama UMKM</th>
+        <th>Alamat</th>
+        <th>Kategori</th>
+    </tr>
+    {% for u in umkm %}
+    <tr>
+        <td>{{ u.nama_umkm }}</td>
+        <td>{{ u.alamat }}</td>
+        <td>{{ u.kategori }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<br>
+<a href="/umkm/dashboard">Kembali</a>
+</body>
+</html>

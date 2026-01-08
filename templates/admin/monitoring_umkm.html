@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Monitoring UMKM</title>
+<style>
+body { font-family: "Segoe UI"; background:#f4f6fb; padding:30px; }
+.container { max-width:1100px; margin:auto; }
+.card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 6px 18px rgba(0,0,0,.05); }
+h2 { color:#1f2937; margin-bottom:10px; }
+table { width:100%; border-collapse:collapse; margin-top:15px; }
+th { background:#2563eb; color:#fff; padding:12px; text-align:left; }
+td { padding:12px; border-bottom:1px solid #e5e7eb; }
+tr:hover { background:#f1f5f9; }
+.badge { padding:4px 10px; border-radius:12px; font-size:12px; }
+.active { background:#16a34a; color:white; }
+.inactive { background:#dc2626; color:white; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>🏪 Monitoring UMKM</h2>
+
+<div class="card">
+<table>
+<tr>
+    <th>Nama UMKM</th>
+    <th>Pemilik</th>
+    <th>Kategori</th>
+    <th>Total Produk</th>
+    <th>Total Penjualan</th>
+    <th>Status</th>
+</tr>
+{% for u in umkm %}
+<tr>
+    <td>{{ u.nama_umkm }}</td>
+    <td>{{ u.owner }}</td>
+    <td>{{ u.kategori }}</td>
+    <td>{{ u.total_produk }}</td>
+    <td>Rp {{ u.total_penjualan }}</td>
+    <td>
+        {% if u.total_penjualan > 0 %}
+            <span class="badge active">Aktif</span>
+        {% else %}
+            <span class="badge inactive">Tidak Aktif</span>
+        {% endif %}
+    </td>
+</tr>
+{% endfor %}
+</table>
+</div>
+<br>
+<a href="/admin/dashboard" class="back-link">
+        ← Kembali ke Dashboard Admin
+    </a>
+
+</div>
+</body>
+</html>

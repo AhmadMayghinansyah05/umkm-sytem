@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Penjualan</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f6f9;
+        }
+        .card {
+            max-width: 420px;
+            margin: 60px auto;
+            background: #ffffff;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .product-name {
+            text-align: center;
+            color: #16a085;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+        label {
+            font-weight: 600;
+            color: #34495e;
+            display: block;
+            margin-bottom: 6px;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+            outline: none;
+        }
+        input[type="number"]:focus {
+            border-color: #3498db;
+        }
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-update {
+            background: #3498db;
+            color: #fff;
+        }
+        .btn-update:hover {
+            background: #2980b9;
+        }
+        .btn-back {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        .btn-back:hover {
+            background: #dfe6e9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Edit Penjualan</h2>
+
+    <div class="product-name">
+        {{ penjualan.nama_produk }}
+    </div>
+
+    <form method="POST">
+        <label for="jumlah">Jumlah Penjualan</label>
+        <input type="number" id="jumlah" name="jumlah"
+               value="{{ penjualan.jumlah }}"
+               min="1" required>
+
+        <div class="btn-group">
+            <a href="/penjualan/data" class="btn btn-back">⬅ Kembali</a>
+            <button type="submit" class="btn btn-update">💾 Update</button>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

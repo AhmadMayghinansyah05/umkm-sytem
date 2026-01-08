@@ -1,220 +1,1151 @@
-from flask import Flask, render_template, redirect, url_for, request, session, jsonify
-from datetime import datetime
-import random
+from flask import (
+    Flask, request, jsonify,
+    render_template, redirect, url_for, session
+)
+from flask_jwt_extended import (
+    JWTManager, create_access_token,
+    jwt_required, get_jwt_identity
+)
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timedelta
+from math import sqrt
+import mysql.connector
+
+# ======= LSTM IMPORTS ======= 
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+
 
 app = Flask(__name__)
-app.secret_key = 'umkm-secret-key-2024-change-this'
 
-# Dummy Users
-USERS = {
-    'pelaku@umkm.com': {'password': 'pelaku123', 'role': 'pelaku', 'name': 'Toko Berkah Jaya'},
-    'admin@umkm.com': {'password': 'admin123', 'role': 'admin', 'name': 'Super Admin'}
-}
+# ================= CONFIG =================
+app.config["SECRET_KEY"] = "umkm_secret_key"
+app.config["JWT_SECRET_KEY"] = "jwt_umkm_secret"
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=2)
 
-# Helper Functions
-def generate_sales_data():
-    months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun']
-    data = []
-    base = 4200000
-    for month in months:
-        actual = base + random.randint(-200000, 400000)
-        prediction = actual + random.randint(-100000, 100000)
-        data.append({'month': month, 'actual': actual, 'prediction': prediction})
-        base += 300000
-    return data
+jwt = JWTManager(app)
 
-def get_top_products():
-    return [
-        {'name': 'Kopi Arabika', 'sales': 1250000, 'growth': 12, 'stock': 45},
-        {'name': 'Teh Herbal', 'sales': 980000, 'growth': 8, 'stock': 32},
-        {'name': 'Keripik Singkong', 'sales': 850000, 'growth': -3, 'stock': 78},
-        {'name': 'Sambal Matah', 'sales': 720000, 'growth': 15, 'stock': 23},
-        {'name': 'Abon Sapi', 'sales': 650000, 'growth': 5, 'stock': 56}
-    ]
+# ================= DATABASE =================
+def get_db():
+    return mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="umkm_smart"
+    )
 
-def get_activities():
-    return [
-        {'desc': 'Penjualan Kopi Arabika - 15 unit', 'time': '10 menit lalu', 'status': 'success'},
-        {'desc': 'Prediksi penjualan tersedia', 'time': '2 jam lalu', 'status': 'info'},
-        {'desc': 'Stok Sambal Matah menipis', 'time': '3 jam lalu', 'status': 'warning'},
-        {'desc': 'Penjualan Teh Herbal - 8 unit', 'time': '5 jam lalu', 'status': 'success'}
-    ]
+# ================= LOG ACTIVITY =================
+def log_activity(user_id, aktivitas):
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("""
+        INSERT INTO log_aktivitas_user
+        (user_id, aktivitas, endpoint, metode_http, ip_address, created_at)
+        VALUES (%s,%s,%s,%s,%s,%s)
+    """, (
+        user_id,
+        aktivitas,
+        request.path,
+        request.method,
+        request.remote_addr,
+        datetime.now()
+    ))
+    db.commit()
+    cur.close()
+    db.close()
 
-def get_umkm_list():
-    return [
-        {'name': 'Toko Berkah Jaya', 'category': 'Makanan & Minuman', 'date': '2 jam lalu', 'status': 'active', 'sales': 'Rp 45.2jt'},
-        {'name': 'Warung Sari Rasa', 'category': 'Kuliner', 'date': '5 jam lalu', 'status': 'active', 'sales': 'Rp 32.8jt'},
-        {'name': 'Kopi Kenangan Kita', 'category': 'Minuman', 'date': '1 hari lalu', 'status': 'pending', 'sales': 'Rp 28.5jt'},
-        {'name': 'Batik Nusantara', 'category': 'Fashion', 'date': '1 hari lalu', 'status': 'active', 'sales': 'Rp 18.3jt'},
-        {'name': 'Kerajinan Tangan', 'category': 'Handicraft', 'date': '2 hari lalu', 'status': 'active', 'sales': 'Rp 15.7jt'}
-    ]
-
-def get_model_performance():
-    return [
-        {'metric': 'Prediksi Penjualan', 'accuracy': 92, 'status': 'excellent'},
-        {'metric': 'Rekomendasi Produk', 'accuracy': 88, 'status': 'good'},
-        {'metric': 'Analisis Tren', 'accuracy': 85, 'status': 'good'},
-        {'metric': 'Clustering Pelanggan', 'accuracy': 90, 'status': 'excellent'}
-    ]
-
-def get_recommended_products():
-    return [
-        {'name': 'Kopi Arabika Premium', 'category': 'Makanan & Minuman', 'match': 95},
-        {'name': 'Teh Herbal Organik', 'category': 'Makanan & Minuman', 'match': 90},
-        {'name': 'Snack Keripik Singkong', 'category': 'Makanan & Minuman', 'match': 85},
-        {'name': 'Sambal Matah Kemasan', 'category': 'Makanan & Minuman', 'match': 80},
-        {'name': 'Abon Sapi Spesial', 'category': 'Makanan & Minuman', 'match': 75},
-        {'name': 'Kerupuk Udang', 'category': 'Makanan & Minuman', 'match': 70}
-    ]
-
-# Routes
-@app.route('/')
+# ================= ROOT =================
+@app.route("/")
 def index():
-    if 'user' in session:
-        if session['role'] == 'admin':
-            return redirect(url_for('admin_dashboard'))
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    if session.get("role") == "admin":
+        return redirect("/admin/dashboard")
+    if session.get("role") == "umkm":
+        return redirect("/umkm/dashboard")
+    return render_template("auth/login.html")
 
-@app.route('/login', methods=['GET', 'POST'])
+# ================= REGISTER =================
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    # ================= WEB (GET) =================
+    if request.method == "GET":
+        return render_template("auth/register.html")
+
+    # ================= POST (FORM / API) =================
+    # Bisa dari form HTML atau Postman JSON
+    data = request.get_json(silent=True) or request.form
+
+    # Validasi minimal
+    if not data or not data.get("email") or not data.get("password") or not data.get("name"):
+        return jsonify({"msg": "Data tidak lengkap"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Cek email
+    cur.execute("SELECT id FROM users WHERE email=%s", (data["email"],))
+    if cur.fetchone():
+        cur.close()
+        db.close()
+
+        # Jika dari form → kembali ke halaman register
+        if not request.is_json:
+            return render_template(
+                "auth/register.html",
+                error="Email sudah terdaftar"
+            )
+
+        return jsonify({"msg": "Email sudah terdaftar"}), 400
+
+    # Hash password
+    password_hash = generate_password_hash(data["password"])
+
+    # Simpan user
+    cur.execute("""
+        INSERT INTO users (name,email,password,role,created_at)
+        VALUES (%s,%s,%s,%s,%s)
+    """, (
+        data["name"],
+        data["email"],
+        password_hash,
+        "umkm",
+        datetime.now()
+    ))
+    db.commit()
+    user_id = cur.lastrowid
+
+    # Log aktivitas
+    log_activity(user_id, "register")
+
+    cur.close()
+    db.close()
+
+    # ================= RESPONSE =================
+    # Jika dari WEB → redirect
+    if not request.is_json:
+        return redirect(url_for("login"))
+
+    # Jika dari API → JSON
+    return jsonify({"msg": "Registrasi berhasil"}), 201
+
+# ================= LOGIN =================
+from flask import render_template, request, redirect, session, jsonify, url_for
+from werkzeug.security import check_password_hash
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    error = None
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        if email in USERS and USERS[email]['password'] == password:
-            session['user'] = email
-            session['role'] = USERS[email]['role']
-            session['name'] = USERS[email]['name']
-            
-            if USERS[email]['role'] == 'admin':
-                return redirect(url_for('admin_dashboard'))
-            return redirect(url_for('dashboard'))
-        
-        error = 'Email atau password salah'
-    
-    return render_template('login.html', error=error)
+    # ================= TAMPILAN LOGIN (WEB) =================
+    if request.method == "GET":
+        return render_template("auth/login.html")
 
-@app.route('/logout')
+    # ================= PROSES LOGIN (POST) =================
+    data = request.get_json(silent=True) or request.form
+
+    if not data or not data.get("email") or not data.get("password"):
+        return jsonify({"msg": "Email dan password wajib diisi"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("SELECT * FROM users WHERE email=%s", (data["email"],))
+    user = cur.fetchone()
+
+    if not user or not check_password_hash(user["password"], data["password"]):
+        cur.close()
+        db.close()
+
+        # Jika dari WEB → tampilkan error
+        if not request.is_json:
+            return render_template(
+                "auth/login.html",
+                error="Email atau password salah"
+            )
+
+        return jsonify({"msg": "Email atau password salah"}), 401
+
+    # ================= SESSION UNTUK WEB =================
+    session["user_id"] = user["id"]
+    session["role"] = user["role"]
+
+    log_activity(user["id"], "login")
+
+    cur.close()
+    db.close()
+
+    # ================= JWT UNTUK API =================
+    token = create_access_token(identity={
+        "id": user["id"],
+        "role": user["role"]
+    })
+
+    # ================= RESPONSE =================
+    if request.is_json:
+        return jsonify({"token": token, "role": user["role"]})
+
+    # Redirect sesuai role
+    if user["role"] == "admin":
+        return redirect(url_for("admin_dashboard"))
+
+    return redirect(url_for("umkm_dashboard"))
+
+# ================= LOGOUT =================
+@app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect("/")
 
-# Pelaku UMKM Routes
-@app.route('/dashboard')
-def dashboard():
-    if 'user' not in session or session['role'] != 'pelaku':
-        return redirect(url_for('login'))
-    
-    return render_template('dashboard.html',
-        user_name=session['name'],
-        sales_data=generate_sales_data(),
-        top_products=get_top_products(),
-        activities=get_activities()
-    )
-
-@app.route('/input-penjualan', methods=['GET', 'POST'])
-def input_penjualan():
-    if 'user' not in session or session['role'] != 'pelaku':
-        return redirect(url_for('login'))
-    
-    success = False
-    if request.method == 'POST':
-        success = True
-    
-    return render_template('input_penjualan.html', success=success, user_name=session['name'])
-
-@app.route('/prediksi')
-def prediksi():
-    if 'user' not in session or session['role'] != 'pelaku':
-        return redirect(url_for('login'))
-    
-    prediction = {
-        'next_month': 63500000,
-        'confidence': 92,
-        'trend': 'naik',
-        'sales_data': generate_sales_data()
-    }
-    return render_template('prediksi.html', prediction=prediction, user_name=session['name'])
-
-@app.route('/rekomendasi')
-def rekomendasi():
-    if 'user' not in session or session['role'] != 'pelaku':
-        return redirect(url_for('login'))
-    
-    return render_template('rekomendasi.html', products=get_recommended_products(), user_name=session['name'])
-
-# Activity Log Routes - PELAKU UMKM
-@app.route('/aktivitas-log')
-def aktivitas_log():
-    if 'user' not in session or session['role'] != 'pelaku':
-        return redirect(url_for('login'))
-    
-    logs = [
-        {'action': 'Login ke sistem', 'timestamp': '2024-12-20 08:30:15', 'ip': '192.168.1.10', 'status': 'success'},
-        {'action': 'Input data penjualan - Rp 2,400,000', 'timestamp': '2024-12-20 09:15:42', 'ip': '192.168.1.10', 'status': 'success'},
-        {'action': 'Lihat prediksi penjualan', 'timestamp': '2024-12-20 10:05:23', 'ip': '192.168.1.10', 'status': 'success'},
-        {'action': 'Akses dashboard analitik', 'timestamp': '2024-12-20 11:20:18', 'ip': '192.168.1.10', 'status': 'success'},
-        {'action': 'Lihat rekomendasi produk', 'timestamp': '2024-12-20 13:45:09', 'ip': '192.168.1.10', 'status': 'success'},
-        {'action': 'Input data penjualan - Rp 1,800,000', 'timestamp': '2024-12-20 14:30:55', 'ip': '192.168.1.10', 'status': 'success'},
-        {'action': 'Export laporan penjualan', 'timestamp': '2024-12-20 15:10:33', 'ip': '192.168.1.10', 'status': 'success'},
-        {'action': 'Update profil akun', 'timestamp': '2024-12-19 16:25:47', 'ip': '192.168.1.10', 'status': 'success'},
-        {'action': 'Gagal login - password salah', 'timestamp': '2024-12-19 08:12:05', 'ip': '192.168.1.15', 'status': 'failed'},
-        {'action': 'Login ke sistem', 'timestamp': '2024-12-19 08:13:22', 'ip': '192.168.1.10', 'status': 'success'},
-        {'action': 'Lihat dashboard', 'timestamp': '2024-12-19 09:00:11', 'ip': '192.168.1.10', 'status': 'success'},
-        {'action': 'Input data penjualan - Rp 3,200,000', 'timestamp': '2024-12-19 10:45:30', 'ip': '192.168.1.10', 'status': 'success'}
-    ]
-    
-    return render_template('aktivitas_log.html', logs=logs, user_name=session['name'])
-
-# Admin Routes
-@app.route('/admin/dashboard')
+# ================= ADMIN =================
+@app.route("/admin/dashboard")
 def admin_dashboard():
-    if 'user' not in session or session['role'] != 'admin':
-        return redirect(url_for('login'))
-    
-    return render_template('admin_dashboard.html',
-        user_name=session['name'],
-        umkm_list=get_umkm_list(),
-        activities=get_activities(),
-        model_performance=get_model_performance()
+    if session.get("role") != "admin":
+        return redirect("/login")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Statistik utama
+    cur.execute("SELECT COUNT(*) total FROM users")
+    total_user = cur.fetchone()["total"]
+
+    cur.execute("SELECT COUNT(*) total FROM umkm")
+    total_umkm = cur.fetchone()["total"]
+
+    cur.execute("SELECT COUNT(*) total FROM produk")
+    total_produk = cur.fetchone()["total"]
+
+    cur.execute("SELECT SUM(total_harga) omzet FROM penjualan")
+    total_omzet = cur.fetchone()["omzet"] or 0
+
+    # Log aktivitas terbaru
+    cur.execute("""
+        SELECT l.created_at, u.name, l.aktivitas, l.endpoint
+        FROM log_aktivitas_user l
+        LEFT JOIN users u ON l.user_id = u.id
+        ORDER BY l.created_at DESC
+        LIMIT 10
+    """)
+    logs = cur.fetchall()
+
+    cur.close()
+    db.close()
+
+    return render_template(
+        "admin/dashboard.html",
+        total_user=total_user,
+        total_umkm=total_umkm,
+        total_produk=total_produk,
+        total_omzet=total_omzet,
+        logs=logs
     )
 
-@app.route('/admin/umkm')
+
+@app.route("/admin/users")
+def admin_users():
+    if session.get("role") != "admin":
+        return redirect("/login")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT id, name, email, role, created_at
+        FROM users
+        ORDER BY created_at DESC
+    """)
+    users = cur.fetchall()
+
+    cur.close()
+    db.close()
+
+    return render_template("admin/users.html", users=users)
+
+@app.route("/admin/umkm")
 def admin_umkm():
-    if 'user' not in session or session['role'] != 'admin':
-        return redirect(url_for('login'))
-    return render_template('admin_umkm.html', umkm_list=get_umkm_list())
+    if session.get("role") != "admin":
+        return redirect("/login")
 
-@app.route('/admin/products')
-def admin_products():
-    if 'user' not in session or session['role'] != 'admin':
-        return redirect(url_for('login'))
-    return render_template('admin_products.html', products=get_top_products())
+    db = get_db()
+    cur = db.cursor(dictionary=True)
 
-# Activity Log Routes - ADMIN
-@app.route('/admin/aktivitas-log')
-def admin_aktivitas_log():
-    if 'user' not in session or session['role'] != 'admin':
-        return redirect(url_for('login'))
-    
-    logs = [
-        {'user': 'admin@umkm.com', 'action': 'Login ke admin panel', 'timestamp': '2024-12-20 07:30:15', 'ip': '192.168.1.5', 'status': 'success'},
-        {'user': 'admin@umkm.com', 'action': 'Update model LSTM', 'timestamp': '2024-12-20 08:15:42', 'ip': '192.168.1.5', 'status': 'success'},
-        {'user': 'admin@umkm.com', 'action': 'Tambah UMKM baru: Warung Berkah', 'timestamp': '2024-12-20 09:05:23', 'ip': '192.168.1.5', 'status': 'success'},
-        {'user': 'pelaku@umkm.com', 'action': 'Login ke sistem', 'timestamp': '2024-12-20 08:30:15', 'ip': '192.168.1.10', 'status': 'success'},
-        {'user': 'pelaku@umkm.com', 'action': 'Input data penjualan', 'timestamp': '2024-12-20 09:15:42', 'ip': '192.168.1.10', 'status': 'success'},
-        {'user': 'admin@umkm.com', 'action': 'Hapus produk: Kerupuk Bawang', 'timestamp': '2024-12-20 10:20:18', 'ip': '192.168.1.5', 'status': 'success'},
-        {'user': 'admin@umkm.com', 'action': 'Export data semua UMKM', 'timestamp': '2024-12-20 11:45:09', 'ip': '192.168.1.5', 'status': 'success'},
-        {'user': 'pelaku2@umkm.com', 'action': 'Gagal login - akun suspended', 'timestamp': '2024-12-20 12:30:55', 'ip': '192.168.1.20', 'status': 'failed'},
-        {'user': 'admin@umkm.com', 'action': 'Monitoring sistem - CPU 45%', 'timestamp': '2024-12-20 13:10:33', 'ip': '192.168.1.5', 'status': 'success'},
-        {'user': 'admin@umkm.com', 'action': 'Training model recommendation', 'timestamp': '2024-12-20 14:25:47', 'ip': '192.168.1.5', 'status': 'success'},
-        {'user': 'pelaku@umkm.com', 'action': 'Lihat rekomendasi produk', 'timestamp': '2024-12-20 13:45:09', 'ip': '192.168.1.10', 'status': 'success'},
-        {'user': 'admin@umkm.com', 'action': 'Backup database', 'timestamp': '2024-12-19 23:00:05', 'ip': '192.168.1.5', 'status': 'success'}
-    ]
-    
-    return render_template('admin_aktivitas_log.html', logs=logs, user_name=session['name'])
+    cur.execute("""
+        SELECT 
+            u.id,
+            u.nama_umkm,
+            us.name AS pemilik,
+            u.kategori,
+            COUNT(DISTINCT pr.id) AS total_produk,
+            COALESCE(SUM(pj.total_harga), 0) AS total_penjualan
+        FROM umkm u
+        JOIN users us ON u.user_id = us.id
+        LEFT JOIN produk pr ON pr.umkm_id = u.id
+        LEFT JOIN penjualan pj ON pj.produk_id = pr.id
+        GROUP BY u.id, us.name, u.kategori
+        ORDER BY total_penjualan DESC
+    """)
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    umkm = cur.fetchall()
+    cur.close()
+    db.close()
+
+    return render_template("admin/monitoring_umkm.html", umkm=umkm)
+
+
+@app.route("/admin/produk")
+def admin_produk():
+    if session.get("role") != "admin":
+        return redirect("/login")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT pr.nama_produk, pr.harga, pr.stok, u.nama_umkm
+        FROM produk pr
+        JOIN umkm u ON pr.umkm_id = u.id
+        ORDER BY pr.created_at DESC
+    """)
+    produk = cur.fetchall()
+
+    cur.close()
+    db.close()
+
+    return render_template("admin/monitoring_produk.html", produk=produk)
+
+@app.route("/admin/penjualan")
+def admin_penjualan():
+    if session.get("role") != "admin":
+        return redirect("/login")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT p.tanggal, pr.nama_produk, u.nama_umkm,
+               p.jumlah, p.total_harga
+        FROM penjualan p
+        JOIN produk pr ON p.produk_id = pr.id
+        JOIN umkm u ON pr.umkm_id = u.id
+        ORDER BY p.tanggal DESC
+    """)
+    penjualan = cur.fetchall()
+
+    cur.close()
+    db.close()
+
+    return render_template("admin/penjualan_global.html", penjualan=penjualan)
+
+@app.route("/admin/prediksi")
+def admin_prediksi():
+    if session.get("role") != "admin":
+        return redirect("/")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Ambil hasil prediksi terbaru per produk
+    cur.execute("""
+        SELECT 
+            pr.nama_produk,
+            um.nama_umkm,
+            pp.tanggal_prediksi,
+            pp.hasil_prediksi,
+            pp.mae,
+            pp.rmse,
+            pp.created_at
+        FROM prediksi_penjualan pp
+        JOIN produk pr ON pp.produk_id = pr.id
+        JOIN umkm um ON pr.umkm_id = um.id
+        ORDER BY pp.created_at DESC
+        LIMIT 50
+    """)
+
+    prediksi = cur.fetchall()
+    cur.close()
+    db.close()
+
+    return render_template(
+        "admin/monitoring_prediksi.html",
+        prediksi=prediksi
+    )
+
+@app.route("/admin/log-aktivitas")
+def admin_log():
+    if session.get("role") != "admin":
+        return redirect("/login")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT l.created_at, u.name, u.role,
+               l.aktivitas, l.endpoint, l.metode_http, l.ip_address
+        FROM log_aktivitas_user l
+        LEFT JOIN users u ON l.user_id = u.id
+        ORDER BY l.created_at DESC
+    """)
+    logs = cur.fetchall()
+
+    cur.close()
+    db.close()
+
+    return render_template("admin/log_aktivitas.html", logs=logs)
+
+
+# ================= UMKM DASHBOARD =================
+@app.route("/umkm/dashboard")
+def umkm_dashboard():
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Ambil semua UMKM milik user
+    cur.execute(
+        "SELECT * FROM umkm WHERE user_id=%s",
+        (session["user_id"],)
+    )
+    umkm_list = cur.fetchall()
+
+    # UMKM aktif (jika ada)
+    active_umkm = None
+    if session.get("active_umkm_id"):
+        cur.execute(
+            "SELECT * FROM umkm WHERE id=%s",
+            (session["active_umkm_id"],)
+        )
+        active_umkm = cur.fetchone()
+
+    cur.close()
+    db.close()
+
+    return render_template(
+        "umkm/dashboard.html",
+        umkm_list=umkm_list,
+        active_umkm=active_umkm
+    )
+
+# ================= UMKM DATA =================
+@app.route("/umkm/data", methods=["GET", "POST"])
+def umkm_data():
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    if request.method == "POST":
+        cur.execute("""
+            INSERT INTO umkm (user_id,nama_umkm,alamat,kategori,created_at)
+            VALUES (%s,%s,%s,%s,%s)
+        """, (
+            session["user_id"],
+            request.form["nama_umkm"],
+            request.form["alamat"],
+            request.form["kategori"],
+            datetime.now()
+        ))
+        db.commit()
+
+    cur.execute("SELECT * FROM umkm WHERE user_id=%s", (session["user_id"],))
+    data = cur.fetchall()
+    cur.close()
+    db.close()
+
+    return render_template("umkm/umkm.html", umkm=data)
+
+@app.route("/umkm/select/<int:umkm_id>")
+def select_umkm(umkm_id):
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Validasi kepemilikan UMKM
+    cur.execute("""
+        SELECT id FROM umkm
+        WHERE id=%s AND user_id=%s
+    """, (umkm_id, session["user_id"]))
+
+    if not cur.fetchone():
+        cur.close()
+        db.close()
+        return redirect("/umkm/dashboard")
+
+    session["active_umkm_id"] = umkm_id
+
+    cur.close()
+    db.close()
+
+    return redirect("/umkm/dashboard")
+
+@app.route("/umkm/tambah", methods=["GET", "POST"])
+def tambah_umkm():
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    if request.method == "POST":
+        db = get_db()
+        cur = db.cursor(dictionary=True)
+
+        cur.execute("""
+            INSERT INTO umkm (user_id, nama_umkm, alamat, kategori, created_at)
+            VALUES (%s,%s,%s,%s,%s)
+        """, (
+            session["user_id"],
+            request.form["nama_umkm"],
+            request.form["alamat"],
+            request.form["kategori"],
+            datetime.now()
+        ))
+        db.commit()
+
+        umkm_id = cur.lastrowid
+
+        # SET UMKM AKTIF JIKA BELUM ADA
+        if not session.get("active_umkm_id"):
+            session["active_umkm_id"] = umkm_id
+
+        cur.close()
+        db.close()
+
+        return redirect("/umkm/dashboard")
+
+    return render_template("umkm/tambah_umkm.html")
+
+@app.route("/umkm/edit/<int:id>", methods=["GET", "POST"])
+def umkm_edit(id):
+    if session.get("role") != "umkm":
+        return redirect("/login")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Pastikan UMKM milik user
+    cur.execute("""
+        SELECT * FROM umkm
+        WHERE id=%s AND user_id=%s
+    """, (id, session["user_id"]))
+    umkm = cur.fetchone()
+
+    if not umkm:
+        cur.close()
+        db.close()
+        return redirect("/umkm/dashboard")
+
+    if request.method == "POST":
+        cur.execute("""
+            UPDATE umkm
+            SET nama_umkm=%s,
+                alamat=%s,
+                kategori=%s
+            WHERE id=%s
+        """, (
+            request.form["nama_umkm"],
+            request.form["alamat"],
+            request.form["kategori"],
+            id
+        ))
+        db.commit()
+
+        log_activity(session["user_id"], "edit_umkm")
+
+        cur.close()
+        db.close()
+        return redirect("/umkm/dashboard")
+
+    cur.close()
+    db.close()
+
+    return render_template("umkm/umkm_edit.html", umkm=umkm)
+
+@app.route("/umkm/delete/<int:id>", methods=["POST"])
+def umkm_delete(id):
+    if session.get("role") != "umkm":
+        return redirect("/login")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # 1. Validasi kepemilikan UMKM
+    cur.execute("""
+        SELECT id FROM umkm
+        WHERE id=%s AND user_id=%s
+    """, (id, session["user_id"]))
+    umkm = cur.fetchone()
+
+    if not umkm:
+        cur.close()
+        db.close()
+        return redirect("/umkm/dashboard")
+
+    # 2. Cek apakah masih ada produk
+    cur.execute("SELECT COUNT(*) total FROM produk WHERE umkm_id=%s", (id,))
+    if cur.fetchone()["total"] > 0:
+        cur.close()
+        db.close()
+        return render_template(
+            "umkm/dashboard.html",
+            error="UMKM tidak bisa dihapus karena masih memiliki produk"
+        )
+
+    # 3. Hapus UMKM
+    cur.execute("DELETE FROM umkm WHERE id=%s", (id,))
+    db.commit()
+
+    # 4. Log aktivitas
+    log_activity(session["user_id"], "hapus_umkm")
+
+    # 5. Reset UMKM aktif jika terhapus
+    if session.get("active_umkm_id") == id:
+        session.pop("active_umkm_id")
+
+    cur.close()
+    db.close()
+
+    return redirect("/umkm/dashboard")
+
+
+# ================= PRODUK =================
+@app.route("/produk/data", methods=["GET", "POST"])
+def produk_data():
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    active_umkm_id = session.get("active_umkm_id")
+    if not active_umkm_id:
+        return redirect("/umkm/dashboard")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # ================= CREATE =================
+    if request.method == "POST":
+        cur.execute("""
+            INSERT INTO produk
+            (umkm_id, nama_produk, kategori, harga, stok, deskripsi, created_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            active_umkm_id,
+            request.form["nama_produk"],
+            request.form["kategori"],
+            request.form["harga"],
+            request.form["stok"],
+            request.form.get("deskripsi"),
+            datetime.now()
+        ))
+        db.commit()
+
+    # ================= READ =================
+    cur.execute("""
+        SELECT * FROM produk
+        WHERE umkm_id = %s
+        ORDER BY created_at DESC
+    """, (active_umkm_id,))
+    produk = cur.fetchall()
+
+    cur.close()
+    db.close()
+
+    return render_template("umkm/produk.html", produk=produk)
+
+@app.route("/produk/edit/<int:id>", methods=["GET", "POST"])
+def produk_edit(id):
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # ================= UPDATE =================
+    if request.method == "POST":
+        cur.execute("""
+            UPDATE produk SET
+                nama_produk=%s,
+                kategori=%s,
+                harga=%s,
+                stok=%s,
+                deskripsi=%s
+            WHERE id=%s
+        """, (
+            request.form["nama_produk"],
+            request.form["kategori"],
+            request.form["harga"],
+            request.form["stok"],
+            request.form.get("deskripsi"),
+            id
+        ))
+        db.commit()
+        cur.close()
+        db.close()
+        return redirect("/produk/data")
+
+    # ================= READ =================
+    cur.execute("SELECT * FROM produk WHERE id=%s", (id,))
+    produk = cur.fetchone()
+
+    cur.close()
+    db.close()
+
+    if not produk:
+        return redirect("/produk/data")
+
+    return render_template("umkm/produk_edit.html", produk=produk)
+
+@app.route("/produk/delete/<int:id>")
+def produk_delete(id):
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    db = get_db()
+    cur = db.cursor()
+
+    cur.execute("DELETE FROM produk WHERE id=%s", (id,))
+    db.commit()
+
+    cur.close()
+    db.close()
+
+    return redirect("/produk/data")
+
+# ================= PENJUALAN =================
+@app.route("/penjualan/data")
+def penjualan_data():
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    if not session.get("active_umkm_id"):
+        return redirect("/umkm/dashboard")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT p.id, pr.nama_produk, p.tanggal, p.jumlah, p.total_harga
+        FROM penjualan p
+        JOIN produk pr ON p.produk_id = pr.id
+        WHERE pr.umkm_id = %s
+        ORDER BY p.tanggal DESC
+    """, (session["active_umkm_id"],))
+
+    penjualan = cur.fetchall()
+    cur.close()
+    db.close()
+
+    return render_template("umkm/penjualan.html", penjualan=penjualan)
+
+@app.route("/penjualan/tambah", methods=["GET", "POST"])
+def penjualan_tambah():
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    umkm_id = session.get("active_umkm_id")
+    if not umkm_id:
+        return redirect("/umkm/dashboard")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Ambil produk UMKM aktif
+    cur.execute("SELECT id, nama_produk, harga FROM produk WHERE umkm_id=%s", (umkm_id,))
+    produk_list = cur.fetchall()
+
+    if request.method == "POST":
+        produk_id = request.form["produk_id"]
+        jumlah = int(request.form["jumlah"])
+        tanggal = request.form["tanggal"]
+
+        cur.execute("SELECT harga FROM produk WHERE id=%s", (produk_id,))
+        harga = cur.fetchone()["harga"]
+
+        total = harga * jumlah
+
+        cur.execute("""
+            INSERT INTO penjualan (produk_id, tanggal, jumlah, total_harga, created_at)
+            VALUES (%s,%s,%s,%s,%s)
+        """, (
+            produk_id, tanggal, jumlah, total, datetime.now()
+        ))
+        db.commit()
+
+        log_activity(session["user_id"], "tambah_penjualan")
+
+        cur.close()
+        db.close()
+
+        return redirect("/penjualan/data")
+
+    cur.close()
+    db.close()
+
+    return render_template("umkm/penjualan_tambah.html", produk_list=produk_list)
+
+@app.route("/penjualan/edit/<int:id>", methods=["GET", "POST"])
+def penjualan_edit(id):
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT p.*, pr.nama_produk, pr.harga
+        FROM penjualan p
+        JOIN produk pr ON p.produk_id = pr.id
+        WHERE p.id=%s
+    """, (id,))
+    penjualan = cur.fetchone()
+
+    if not penjualan:
+        cur.close()
+        db.close()
+        return redirect("/penjualan/data")
+
+    if request.method == "POST":
+        jumlah = int(request.form["jumlah"])
+        total = jumlah * penjualan["harga"]
+
+        cur.execute("""
+            UPDATE penjualan
+            SET jumlah=%s, total_harga=%s
+            WHERE id=%s
+        """, (jumlah, total, id))
+        db.commit()
+
+        log_activity(session["user_id"], "edit_penjualan")
+
+        cur.close()
+        db.close()
+
+        return redirect("/penjualan/data")
+
+    cur.close()
+    db.close()
+
+    return render_template("umkm/penjualan_edit.html", penjualan=penjualan)
+
+@app.route("/penjualan/delete/<int:id>")
+def penjualan_delete(id):
+    if session.get("role") != "umkm":
+        return redirect("/")
+
+    db = get_db()
+    cur = db.cursor()
+
+    cur.execute("DELETE FROM penjualan WHERE id=%s", (id,))
+    db.commit()
+
+    log_activity(session["user_id"], "hapus_penjualan")
+
+    cur.close()
+    db.close()
+
+    return redirect("/penjualan/data")
+
+#   ================= UMKM LOG AKTIVITAS =================
+@app.route("/umkm/log-aktivitas")
+def umkm_log():
+    if session.get("role") != "umkm":
+        return redirect("/login")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT created_at, aktivitas, endpoint, metode_http, ip_address
+        FROM log_aktivitas_user
+        WHERE user_id = %s
+        ORDER BY created_at DESC
+    """, (session["user_id"],))
+
+    logs = cur.fetchall()
+
+    cur.close()
+    db.close()
+
+    return render_template("umkm/log_aktivitas.html", logs=logs)
+
+# ================= LSTM PREDICTION MODEL =================
+@app.route("/prediksi/penjualan", methods=["GET"])
+def umkm_prediksi_penjualan():
+    if session.get("role") != "umkm":
+        return redirect("/login")
+
+    if not session.get("active_umkm_id"):
+        return redirect("/umkm/dashboard")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # histori penjualan UMKM aktif
+    cur.execute("""
+        SELECT tanggal, SUM(jumlah) AS total
+        FROM penjualan p
+        JOIN produk pr ON p.produk_id = pr.id
+        WHERE pr.umkm_id = %s
+        GROUP BY tanggal
+        ORDER BY tanggal ASC
+    """, (session["active_umkm_id"],))
+    data = cur.fetchall()
+
+    # prediksi terakhir
+    cur.execute("""
+        SELECT hasil_prediksi, mae, rmse, tanggal_prediksi
+        FROM prediksi_penjualan
+        ORDER BY created_at DESC
+        LIMIT 1
+    """)
+    prediksi = cur.fetchone()
+
+    cur.close()
+    db.close()
+
+    return render_template(
+        "umkm/prediksi_penjualan.html",
+        data=data,
+        prediksi=prediksi["hasil_prediksi"] if prediksi else 0,
+        mae=prediksi["mae"] if prediksi else "-",
+        rmse=prediksi["rmse"] if prediksi else "-",
+        tanggal_prediksi=prediksi["tanggal_prediksi"] if prediksi else "-"
+    )    
+
+# ================= LSTM PREDICTION MODEL =================
+def lstm_predict_sales(sales_series, n_steps=7, epochs=50):
+    """
+    sales_series: list total penjualan harian
+    """
+
+    if len(sales_series) < n_steps + 1:
+        return None, None, None
+
+    # ===== NORMALIZATION =====
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    data = scaler.fit_transform(
+        np.array(sales_series).reshape(-1, 1)
+    )
+
+    # ===== CREATE SEQUENCE =====
+    X, y = [], []
+    for i in range(len(data) - n_steps):
+        X.append(data[i:i+n_steps])
+        y.append(data[i+n_steps])
+
+    X = np.array(X)
+    y = np.array(y)
+
+    # ===== TRAIN TEST SPLIT =====
+    split = int(len(X) * 0.8)
+    X_train, X_test = X[:split], X[split:]
+    y_train, y_test = y[:split], y[split:]
+
+    # ===== MODEL =====
+    model = Sequential()
+    model.add(LSTM(50, activation='relu', input_shape=(n_steps, 1)))
+    model.add(Dense(1))
+    model.compile(optimizer='adam', loss='mse')
+
+    model.fit(X_train, y_train, epochs=epochs, verbose=0)
+
+    # ===== EVALUATION =====
+    y_pred = model.predict(X_test, verbose=0)
+
+    y_test_inv = scaler.inverse_transform(y_test)
+    y_pred_inv = scaler.inverse_transform(y_pred)
+
+    mae = mean_absolute_error(y_test_inv, y_pred_inv)
+    rmse = sqrt(mean_squared_error(y_test_inv, y_pred_inv))
+
+    # ===== NEXT DAY PREDICTION =====
+    last_sequence = data[-n_steps:]
+    next_pred = model.predict(
+        last_sequence.reshape(1, n_steps, 1),
+        verbose=0
+    )
+    next_pred_inv = scaler.inverse_transform(next_pred)[0][0]
+
+    return float(next_pred_inv), float(mae), float(rmse)
+
+# ================= GENERATE PREDIKSI PENJUALAN =================
+@app.route("/prediksi/penjualan/generate", methods=["POST"])
+def generate_prediksi_penjualan():
+    if session.get("role") != "umkm":
+        return redirect("/login")
+
+    umkm_id = session.get("active_umkm_id")
+    if not umkm_id:
+        return redirect("/umkm/dashboard")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # ===== AMBIL DATA TIME SERIES =====
+    cur.execute("""
+        SELECT tanggal, SUM(jumlah) AS total
+        FROM penjualan p
+        JOIN produk pr ON p.produk_id = pr.id
+        WHERE pr.umkm_id = %s
+        GROUP BY tanggal
+        ORDER BY tanggal ASC
+    """, (umkm_id,))
+    rows = cur.fetchall()
+
+    if len(rows) < 10:
+        cur.close()
+        db.close()
+        return redirect("/prediksi/penjualan")
+
+    sales_series = [r["total"] for r in rows]
+
+    # ===== LSTM PROCESS =====
+    hasil, mae, rmse = lstm_predict_sales(sales_series)
+
+    if hasil is None:
+        cur.close()
+        db.close()
+        return redirect("/prediksi/penjualan")
+
+    # ===== SIMPAN KE DATABASE =====
+    cur.execute("""
+        INSERT INTO prediksi_penjualan
+        (produk_id, tanggal_prediksi, hasil_prediksi, mae, rmse, created_at)
+        VALUES (%s,%s,%s,%s,%s,%s)
+    """, (
+        None,
+        datetime.now().date(),
+        hasil,
+        mae,
+        rmse,
+        datetime.now()
+    ))
+    db.commit()
+
+    log_activity(session["user_id"], "generate_prediksi_penjualan_lstm")
+
+    cur.close()
+    db.close()
+
+    return redirect("/prediksi/penjualan")
+
+
+# ================= REKOMENDASI PRODUK =================
+@app.route("/rekomendasi/produk", methods=["GET"])
+def umkm_rekomendasi_produk():
+    if session.get("role") != "umkm":
+        return redirect("/login")
+
+    if not session.get("active_umkm_id"):
+        return redirect("/umkm/dashboard")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT r.created_at, p.nama_produk,
+               r.rekomendasi, r.alasan
+        FROM rekomendasi_produk r
+        JOIN produk p ON r.produk_id = p.id
+        WHERE p.umkm_id = %s
+        ORDER BY r.created_at DESC
+    """, (session["active_umkm_id"],))
+
+    rekomendasi = cur.fetchall()
+
+    cur.close()
+    db.close()
+
+    return render_template(
+        "umkm/rekomendasi_produk.html",
+        rekomendasi=rekomendasi
+    )
+
+@app.route("/rekomendasi/produk/generate", methods=["POST"])
+def generate_rekomendasi_produk():
+    if session.get("role") != "umkm":
+        return redirect("/login")
+
+    umkm_id = session.get("active_umkm_id")
+    if not umkm_id:
+        return redirect("/umkm/dashboard")
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Ambil data produk + penjualan 30 hari
+    cur.execute("""
+        SELECT p.id, p.nama_produk, p.stok,
+               IFNULL(SUM(j.jumlah), 0) AS total_jual
+        FROM produk p
+        LEFT JOIN penjualan j
+            ON p.id = j.produk_id
+            AND j.tanggal >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        WHERE p.umkm_id = %s
+        GROUP BY p.id
+    """, (umkm_id,))
+    produk_list = cur.fetchall()
+
+    for p in produk_list:
+        rekomendasi = ""
+        alasan = ""
+
+        if p["total_jual"] >= 50 and p["stok"] < 20:
+            rekomendasi = "Tambah Stok"
+            alasan = "Produk sangat laku dan stok mulai menipis"
+
+        elif p["total_jual"] >= 50:
+            rekomendasi = "Pertahankan Stok"
+            alasan = "Produk laris dan stabil"
+
+        elif p["total_jual"] < 10:
+            rekomendasi = "Promosikan Produk"
+            alasan = "Penjualan rendah dalam 30 hari terakhir"
+
+        else:
+            rekomendasi = "Evaluasi Produk"
+            alasan = "Performa penjualan sedang"
+
+        cur.execute("""
+            INSERT INTO rekomendasi_produk
+            (produk_id, rekomendasi, alasan, created_at)
+            VALUES (%s, %s, %s, NOW())
+        """, (p["id"], rekomendasi, alasan))
+
+    db.commit()
+    cur.close()
+    db.close()
+
+    return redirect("/rekomendasi/produk")
+
+
+# ================= API (TETAP ADA) =================
+@app.route("/dashboard", methods=["GET"])
+@jwt_required()
+def dashboard_api():
+    user = get_jwt_identity()
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("SELECT COUNT(*) total FROM produk")
+    total_produk = cur.fetchone()["total"]
+
+    cur.execute("SELECT SUM(total_harga) omzet FROM penjualan")
+    omzet = cur.fetchone()["omzet"] or 0
+
+    cur.close()
+    db.close()
+
+    return jsonify({
+        "role": user["role"],
+        "total_produk": total_produk,
+        "total_omzet": float(omzet)
+    })
+
+# ================= RUN =================
+if __name__ == "__main__":
+    print("REGISTERED ROUTES:")
+    print(app.url_map)
+    app.run(debug=True)

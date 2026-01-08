@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block content %}
+<h3>Data Pelanggan</h3>
+
+<form method="post">
+    <input name="usia" placeholder="Usia">
+    <select name="jenis_kelamin">
+        <option>Laki-laki</option>
+        <option>Perempuan</option>
+    </select>
+    <input name="lokasi" placeholder="Lokasi">
+    <button>Simpan</button>
+</form>
+
+<table>
+<tr><th>Usia</th><th>Gender</th><th>Lokasi</th></tr>
+{% for p in pelanggan %}
+<tr>
+<td>{{ p.usia }}</td>
+<td>{{ p.jenis_kelamin }}</td>
+<td>{{ p.lokasi }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

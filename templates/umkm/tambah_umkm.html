@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Tambah UMKM</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            background: #ffffff;
+            width: 400px;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        label {
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            margin-bottom: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #219150;
+        }
+
+        .back {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            text-decoration: none;
+            color: #2980b9;
+            font-size: 14px;
+        }
+
+        .back:hover {
+            text-decoration: underline;
+        }
+
+        .info {
+            background: #ecf9f1;
+            border-left: 4px solid #27ae60;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #2d6a4f;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+
+        <h2>Tambah Usaha Baru</h2>
+
+        <div class="info">
+            Silakan lengkapi data usaha Anda untuk mulai mengelola produk dan penjualan.
+        </div>
+
+        <form method="POST">
+            <label>Nama UMKM</label>
+            <input type="text" name="nama_umkm" placeholder="Contoh: Warung Makan Bu Siti" required>
+
+            <label>Alamat</label>
+            <textarea name="alamat" rows="3" placeholder="Alamat lengkap usaha" required></textarea>
+
+            <label>Kategori</label>
+            <input type="text" name="kategori" placeholder="Contoh: Kuliner, Minuman, Snack" required>
+
+            <button type="submit" class="btn">💾 Simpan UMKM</button>
+        </form>
+
+        <a href="/umkm/dashboard" class="back">← Kembali ke Dashboard</a>
+
+    </div>
+</div>
+
+</body>
+</html>

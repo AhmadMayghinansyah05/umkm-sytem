@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Manajemen Pengguna</title>
+
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: #f4f6fb;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        h2 {
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background: #2563eb;
+            color: #ffffff;
+            text-align: left;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background: #f1f5f9;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .badge-admin {
+            background: #dc2626;
+            color: white;
+        }
+
+        .badge-umkm {
+            background: #16a34a;
+            color: white;
+        }
+
+        .back {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: 500;
+        }
+
+        .back:hover {
+            text-decoration: underline;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>👥 Manajemen Pengguna</h2>
+    <div class="subtitle">
+        Daftar seluruh akun pengguna sistem UMKM Smart System
+    </div>
+
+    <div class="card">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Nama</th>
+                <th>Email</th>
+                <th>Role</th>
+            </tr>
+
+            {% for u in users %}
+            <tr>
+                <td>{{ u.id }}</td>
+                <td>{{ u.name }}</td>
+                <td>{{ u.email }}</td>
+                <td>
+                    {% if u.role == 'admin' %}
+                        <span class="badge badge-admin">Admin</span>
+                    {% else %}
+                        <span class="badge badge-umkm">UMKM</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <a href="/admin/dashboard" class="back">← Kembali ke Dashboard</a>
+
+</div>
+
+</body>
+</html>

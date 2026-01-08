@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Penjualan Global</title>
+<style>
+body { font-family:"Segoe UI"; background:#f4f6fb; padding:30px; }
+.container { max-width:1000px; margin:auto; }
+.card { background:#fff; padding:25px; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.05); margin-bottom:20px; }
+.stat { font-size:28px; font-weight:bold; color:#2563eb; }
+table { width:100%; border-collapse:collapse; margin-top:15px; }
+th { background:#2563eb; color:white; padding:12px; }
+td { padding:12px; border-bottom:1px solid #e5e7eb; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>💰 Penjualan Global</h2>
+
+<div class="card">
+<div>Total Omzet Sistem</div>
+<div class="stat">Rp {{ total_omzet }}</div>
+</div>
+
+<div class="card">
+<table>
+<tr>
+    <th>Tanggal</th>
+    <th>Total Transaksi</th>
+    <th>Omzet</th>
+</tr>
+{% for p in penjualan %}
+<tr>
+    <td>{{ p.tanggal }}</td>
+    <td>{{ p.total_transaksi }}</td>
+    <td>Rp {{ p.omzet }}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+<br>
+<a href="/admin/dashboard" class="back-link">
+        ← Kembali ke Dashboard Admin
+    </a>
+</div>
+</body>
+</html>

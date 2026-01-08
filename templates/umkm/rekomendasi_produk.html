@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Rekomendasi Produk</title>
+
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        h2 {
+            margin: 0 0 10px;
+        }
+
+        p {
+            color: #555;
+            font-size: 14px;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #0d6efd;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #084298;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #565e64;
+        }
+
+        /* CARD */
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        thead {
+            background: #f1f3f5;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        th {
+            color: #333;
+        }
+
+        tr:not(:last-child) {
+            border-bottom: 1px solid #eee;
+        }
+
+        /* BADGE */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-tambah {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .badge-promosi {
+            background: #fff3cd;
+            color: #664d03;
+        }
+
+        .badge-evaluasi {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .badge-pertahankan {
+            background: #cff4fc;
+            color: #055160;
+        }
+
+        /* EMPTY */
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #777;
+        }
+
+        .footer {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div>
+            <h2>🤖 AI Rekomendasi Produk</h2>
+            <p>Sistem cerdas untuk membantu keputusan stok dan strategi produk UMKM</p>
+        </div>
+
+        <form method="POST" action="/rekomendasi/produk/generate">
+            <button type="submit" class="btn btn-primary">
+                🔄 Generate Rekomendasi
+            </button>
+        </form>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>Produk</th>
+                    <th>Rekomendasi AI</th>
+                    <th>Alasan</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for r in rekomendasi %}
+                <tr>
+                    <td>{{ r.created_at }}</td>
+                    <td><strong>{{ r.nama_produk }}</strong></td>
+                    <td>
+                        {% if r.rekomendasi == "Tambah Stok" %}
+                            <span class="badge badge-tambah">Tambah Stok</span>
+                        {% elif r.rekomendasi == "Promosikan Produk" %}
+                            <span class="badge badge-promosi">Promosi</span>
+                        {% elif r.rekomendasi == "Evaluasi Produk" %}
+                            <span class="badge badge-evaluasi">Evaluasi</span>
+                        {% else %}
+                            <span class="badge badge-pertahankan">Pertahankan</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ r.alasan }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="empty">
+                        Belum ada rekomendasi AI untuk UMKM ini
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <a href="/umkm/dashboard" class="btn btn-secondary">← Kembali ke Dashboard</a>
+    </div>
+
+</div>
+
+</body>
+</html>

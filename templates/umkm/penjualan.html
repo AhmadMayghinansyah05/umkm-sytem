@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Penjualan</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1100px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 9px 16px;
+            background-color: #3498db;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-success {
+            background-color: #27ae60;
+        }
+
+        .btn-success:hover {
+            background-color: #1e8449;
+        }
+
+        .btn-warning {
+            background-color: #f39c12;
+        }
+
+        .btn-warning:hover {
+            background-color: #d68910;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table thead {
+            background-color: #2c3e50;
+            color: #ffffff;
+        }
+
+        table th, table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .total {
+            margin-top: 18px;
+            font-weight: bold;
+            text-align: right;
+            color: #2c3e50;
+        }
+
+        .actions {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .empty {
+            text-align: center;
+            color: #777;
+            margin: 30px 0;
+            font-style: italic;
+        }
+
+        .action-btn a {
+            margin: 0 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h2>📊 Data Penjualan</h2>
+        <a href="/penjualan/tambah" class="btn btn-success">+ Tambah Penjualan</a>
+    </div>
+
+    {% if penjualan %}
+    <table>
+        <thead>
+            <tr>
+                <th>Produk</th>
+                <th>Tanggal</th>
+                <th>Jumlah</th>
+                <th>Total Harga (Rp)</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% set total_omzet = 0 %}
+        {% for p in penjualan %}
+            {% set total_omzet = total_omzet + p.total_harga %}
+            <tr>
+                <td>{{ p.nama_produk }}</td>
+                <td>{{ p.tanggal }}</td>
+                <td>{{ p.jumlah }}</td>
+                <td>{{ "{:,.0f}".format(p.total_harga) }}</td>
+                <td class="action-btn">
+                    <a href="/penjualan/edit/{{ p.id }}" class="btn btn-warning">Edit</a>
+                    <a href="/penjualan/delete/{{ p.id }}"
+                       class="btn btn-danger"
+                       onclick="return confirm('Yakin ingin menghapus data ini?')">
+                        Hapus
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total">
+        Total Omzet: Rp {{ "{:,.0f}".format(total_omzet) }}
+    </div>
+    {% else %}
+        <div class="empty">
+            Belum ada data penjualan.
+        </div>
+    {% endif %}
+
+    <div class="actions">
+        <a href="/umkm/dashboard" class="btn">⬅ Kembali ke Dashboard</a>
+    </div>
+
+</div>
+
+</body>
+</html>

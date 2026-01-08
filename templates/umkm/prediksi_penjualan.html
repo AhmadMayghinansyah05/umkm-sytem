@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Prediksi Penjualan</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+        }
+
+        .navbar {
+            background: #0d6efd;
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        h2 {
+            margin-bottom: 5px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+            margin-bottom: 25px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-box h3 {
+            margin: 0;
+            font-size: 22px;
+            color: #0d6efd;
+        }
+
+        .stat-box span {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            background: #198754;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #146c43;
+        }
+
+        .note {
+            font-size: 13px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        canvas {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <strong>UMKM Smart System</strong>
+    <a href="/umkm/dashboard">⬅ Kembali</a>
+</div>
+
+<div class="container">
+
+    <h2>📈 Prediksi Penjualan</h2>
+    <p>Analisis dan prediksi penjualan menggunakan model LSTM.</p>
+
+    <!-- HASIL PREDIKSI -->
+    <div class="card">
+        <h3>🔮 Hasil Prediksi</h3>
+
+        <div class="stats">
+            <div class="stat-box">
+                <h3>{{ prediksi }}</h3>
+                <span>Prediksi Penjualan Berikutnya</span>
+            </div>
+            <div class="stat-box">
+                <h3>{{ mae }}</h3>
+                <span>MAE</span>
+            </div>
+            <div class="stat-box">
+                <h3>{{ rmse }}</h3>
+                <span>RMSE</span>
+            </div>
+        </div>
+
+        <form action="/prediksi/penjualan/generate" method="post" style="margin-top:20px">
+            <button class="btn">🔄 Generate Prediksi LSTM</button>
+        </form>
+
+        <div class="note">
+            * Prediksi dihitung berdasarkan histori penjualan harian UMKM aktif
+        </div>
+    </div>
+
+    <!-- GRAFIK PENJUALAN -->
+    <div class="card">
+        <h3>📊 Grafik Penjualan Historis</h3>
+        <canvas id="salesChart" height="90"></canvas>
+    </div>
+
+</div>
+
+<script>
+    const labels = [
+        {% for d in data %}
+            "{{ d.tanggal }}",
+        {% endfor %}
+    ];
+
+    const values = [
+        {% for d in data %}
+            {{ d.total }},
+        {% endfor %}
+    ];
+
+    new Chart(document.getElementById('salesChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Penjualan',
+                data: values,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13,110,253,0.15)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Monitoring Produk</title>
+<style>
+body { font-family:"Segoe UI"; background:#f4f6fb; padding:30px; }
+.container { max-width:1100px; margin:auto; }
+.card { background:#fff; padding:20px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,.05); }
+table { width:100%; border-collapse:collapse; margin-top:15px; }
+th { background:#2563eb; color:white; padding:12px; }
+td { padding:12px; border-bottom:1px solid #e5e7eb; }
+.highlight { color:#16a34a; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>📦 Monitoring Produk</h2>
+
+<div class="card">
+<table>
+<tr>
+    <th>Nama Produk</th>
+    <th>UMKM</th>
+    <th>Harga</th>
+    <th>Stok</th>
+    <th>Total Terjual</th>
+</tr>
+{% for p in produk %}
+<tr>
+    <td>{{ p.nama_produk }}</td>
+    <td>{{ p.nama_umkm }}</td>
+    <td>Rp {{ p.harga }}</td>
+    <td>{{ p.stok }}</td>
+    <td class="highlight">{{ p.total_terjual }}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+<br>
+<a href="/admin/dashboard" class="back-link">
+        ← Kembali ke Dashboard Admin
+    </a>
+</div>
+</body>
+</html>

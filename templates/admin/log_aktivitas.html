@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Aktivitas Sistem</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: #f5f7fb;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h2 {
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #2563eb;
+            color: white;
+            padding: 12px;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            font-size: 13px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+        }
+
+        tr:hover {
+            background: #f1f5f9;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .role-admin {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .role-umkm {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .method-get {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .method-post {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .method-delete {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .method-put {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .empty {
+            text-align: center;
+            color: #9ca3af;
+            padding: 20px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>📋 Log Aktivitas Sistem</h2>
+    <div class="subtitle">
+        Audit trail aktivitas user (login, CRUD, akses endpoint)
+    </div>
+
+    <div class="card">
+        <table>
+            <tr>
+                <th>Waktu</th>
+                <th>Nama User</th>
+                <th>Role</th>
+                <th>Aktivitas</th>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>IP Address</th>
+            </tr>
+
+            {% for l in logs %}
+            <tr>
+                <td>{{ l.created_at }}</td>
+                <td>{{ l.name or "-" }}</td>
+                <td>
+                    {% if l.role == "admin" %}
+                        <span class="badge role-admin">Admin</span>
+                    {% elif l.role == "umkm" %}
+                        <span class="badge role-umkm">UMKM</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ l.aktivitas }}</td>
+                <td>{{ l.endpoint }}</td>
+                <td>
+                    {% if l.metode_http == "GET" %}
+                        <span class="badge method-get">GET</span>
+                    {% elif l.metode_http == "POST" %}
+                        <span class="badge method-post">POST</span>
+                    {% elif l.metode_http == "DELETE" %}
+                        <span class="badge method-delete">DELETE</span>
+                    {% elif l.metode_http == "PUT" %}
+                        <span class="badge method-put">PUT</span>
+                    {% else %}
+                        {{ l.metode_http }}
+                    {% endif %}
+                </td>
+                <td>{{ l.ip_address }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="empty">
+                    Belum ada aktivitas tercatat
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <a href="/admin/dashboard" class="back-link">
+        ← Kembali ke Dashboard Admin
+    </a>
+
+</div>
+
+</body>
+</html>

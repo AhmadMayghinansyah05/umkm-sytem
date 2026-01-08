@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Login UMKM Smart System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(120deg, #4CAF50, #2e7d32);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-box {
+            background: #ffffff;
+            padding: 30px;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2e7d32;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #388e3c;
+        }
+
+        .footer-text {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .footer-text a {
+            color: #2e7d32;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
+
+        .system-name {
+            text-align: center;
+            font-size: 13px;
+            margin-top: 10px;
+            color: #777;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-box">
+    <h2>Login UMKM Smart</h2>
+
+    <form method="post" action="/login">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="Masukkan email" required>
+
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Masukkan password" required>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <div class="footer-text">
+        Belum punya akun? <a href="/register">Daftar UMKM</a>
+    </div>
+
+    <div class="system-name">
+        Sistem Cerdas UMKM Kuliner
+    </div>
+</div>
+
+</body>
+</html>

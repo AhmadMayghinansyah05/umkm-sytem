@@ -1,0 +1,14 @@
+<div class="sidebar p-3">
+    <h5 class="text-white mb-4">Menu</h5>
+
+    <a href="/dashboard">Dashboard</a>
+
+    {% if session.role == 'admin' %}
+        <a href="/admin/users">Manajemen User</a>
+        <a href="/admin/logs">Log Aktivitas</a>
+    {% else %}
+        <a href="/produk">Produk</a>
+        <a href="/penjualan">Penjualan</a>
+        <a href="/pelanggan">Pelanggan</a>
+    {% endif %}
+</div>

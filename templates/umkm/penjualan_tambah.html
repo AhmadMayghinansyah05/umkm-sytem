@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Tambah Penjualan</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            margin: 50px auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+            color: #34495e;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 6px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #27ae60;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #219150;
+        }
+
+        .back {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            text-decoration: none;
+            color: #3498db;
+        }
+
+        .back:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>➕ Tambah Penjualan</h2>
+
+    <form method="POST">
+        <label>Produk</label>
+        <select name="produk_id" required>
+            {% for p in produk_list %}
+            <option value="{{ p.id }}">
+                {{ p.nama_produk }} — Rp {{ "{:,.0f}".format(p.harga) }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label>Tanggal</label>
+        <input type="date" name="tanggal" required>
+
+        <label>Jumlah</label>
+        <input type="number" name="jumlah" min="1" required>
+
+        <button type="submit">💾 Simpan Penjualan</button>
+    </form>
+
+    <a href="/penjualan/data" class="back">⬅ Kembali ke Data Penjualan</a>
+</div>
+
+</body>
+</html>
